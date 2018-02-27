@@ -22,16 +22,25 @@ export function createGameReducer({ game, numPlayers, multiplayer }) {
     numPlayers = 2;
   }
 
+  const initialG = game.setup(numPlayers);
+  let initialCtx = game.flow.ctx(numPlayers);
+
+  // Initialize PRNG seed.
+  initialCtx._random = { seed: game.seed };
+
   const initial = {
     // User managed state.
-    G: game.setup(numPlayers),
+    G: initialG,
 
     // Framework managed state.
-    ctx: game.flow.ctx(numPlayers),
+    ctx: initialCtx,
 
     // A list of actions performed so far. Used by the
     // GameLog to display a journal of moves.
     log: [],
+
+    // Lists possible moves and player's score to allow running bots.
+    ai: game.ai(initialG, initialCtx),
 
     // A monotonically non-decreasing ID to ensure that
     // state updates are only allowed from clients that
@@ -42,9 +51,6 @@ export function createGameReducer({ game, numPlayers, multiplayer }) {
     // replayed over it to view old snapshots.
     _initial: {},
   };
-
-  // Initialize PRNG seed.
-  initial.ctx._random = { seed: game.seed };
 
   const state = game.flow.init({ G: initial.G, ctx: initial.ctx });
 
@@ -79,12 +85,13 @@ export function createGameReducer({ game, numPlayers, multiplayer }) {
           { G: state.G, ctx: state.ctx },
           action.payload
         );
+        const ai = game.ai(G, ctx);
 
         // Update PRNG state.
         ctx = { ...ctx, _random: PRNGState.get() };
 
         const log = [...state.log, action];
-        return { ...state, G, ctx, log, _id: state._id + 1 };
+        return { ...state, G, ctx, log, ai, _id: state._id + 1 };
       }
 
       case Actions.MAKE_MOVE: {
@@ -110,7 +117,8 @@ export function createGameReducer({ game, numPlayers, multiplayer }) {
         }
 
         const log = [...state.log, action];
-        state = { ...state, G, ctx, log, _id: state._id + 1 };
+        const ai = game.ai(G, state.ctx);
+        state = { ...state, G, ctx, log, ai, _id: state._id + 1 };
 
         // If we're on the client, just process the move
         // and no triggers in multiplayer mode.

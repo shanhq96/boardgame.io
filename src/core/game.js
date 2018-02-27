@@ -7,6 +7,7 @@
  */
 
 import { FlowWithPhases } from './flow';
+import { AI } from './ai';
 import { GenSeed } from './random';
 
 /**
@@ -54,6 +55,16 @@ import { GenSeed } from './random';
  *       ...
  *     ]
  *   },
+ *
+ *   ai: {
+ *     possibleMoves: {
+ *       ranges: {
+ *         moveWithArgs: [{ min: 0, max: 8 }],
+ *       },
+ *       isMovePossible: ({ G, ctx, move, args }) => { ... },
+ *     },
+ *     score: (G, ctx) => { ... },
+ *   }
  * })
  *
  * @param {...object} setup - Function that returns the initial state of G.
@@ -69,15 +80,20 @@ import { GenSeed } from './random';
  *                           If it contains any other object, it is presumed to be a
  *                           configuration object for FlowWithPhases().
  *
+ * @param {...object} ai - Bot framework configuration (see ai.js).
+ *
  * @param {...object} seed - Seed for the PRNG.
  */
-function Game({ name, setup, moves, playerView, flow, seed }) {
+function Game({ name, setup, moves, playerView, flow, seed, ai }) {
   if (name === undefined) name = 'default';
   if (setup === undefined) setup = () => ({});
   if (moves === undefined) moves = {};
   if (playerView === undefined) playerView = G => G;
   if (seed === undefined) seed = GenSeed();
 
+  if (!ai || typeof ai != 'function') {
+    ai = AI(ai || {});
+  }
   if (!flow || flow.processGameEvent === undefined) {
     flow = FlowWithPhases(flow || {});
   }
@@ -87,6 +103,7 @@ function Game({ name, setup, moves, playerView, flow, seed }) {
     setup,
     playerView,
     flow,
+    ai,
     seed,
     moveNames: Object.getOwnPropertyNames(moves),
     processMove: (G, action, ctx) => {

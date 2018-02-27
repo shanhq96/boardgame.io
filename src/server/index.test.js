@@ -165,6 +165,11 @@ test('action', async () => {
       G: {},
       _id: 0,
       _initial: {},
+      ai: {
+        isAvailable: false,
+        possibleMoves: [],
+        score: 0,
+      },
       ctx: {
         currentPlayer: '0',
         currentPlayerMoves: 0,
@@ -182,6 +187,11 @@ test('action', async () => {
       phase: 'default',
       turn: 1,
       _random: undefined,
+    },
+    ai: {
+      isAvailable: false,
+      possibleMoves: [],
+      score: 0,
     },
     log: [
       {
