@@ -1,4 +1,5 @@
 yarn.lock
+yarn*.log
 .DS_Store
 *.swp
 npm-debug.log*
